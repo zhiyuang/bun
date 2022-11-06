@@ -801,9 +801,16 @@ pub const Fetch = struct {
         var disable_timeout = false;
         var disable_keepalive = false;
         var verbose = false;
-        if (first_arg.isString()) {
+        if (first_arg.as(Request)) |request| {
+            url = ZigURL.parse(getAllocator(ctx).dupe(u8, request.url) catch unreachable);
+            method = request.method;
+            if (request.headers) |head| {
+                headers = Headers.from(head, bun.default_allocator) catch unreachable;
+            }
+            body = request.body.useAsAnyBlob();
+        } else if (first_arg.toStringOrNull(globalThis)) |jsstring| {
             var url_zig_str = ZigString.init("");
-            JSValue.fromRef(arguments[0]).toZigString(&url_zig_str, globalThis);
+            jsstring.toZigString(globalThis, &url_zig_str);
             var url_str = url_zig_str.slice();
 
             if (url_str.len == 0) {
@@ -876,13 +883,6 @@ pub const Fetch = struct {
                     }
                 }
             }
-        } else if (first_arg.as(Request)) |request| {
-            url = ZigURL.parse(getAllocator(ctx).dupe(u8, request.url) catch unreachable);
-            method = request.method;
-            if (request.headers) |head| {
-                headers = Headers.from(head, bun.default_allocator) catch unreachable;
-            }
-            body = request.body.useAsAnyBlob();
         } else {
             const fetch_error = fetch_type_error_strings.get(js.JSValueGetType(ctx, arguments[0]));
             exception.* = ZigString.init(fetch_error).toErrorInstance(globalThis).asObjectRef();
@@ -5905,5 +5905,40 @@ pub const FetchEvent = struct {
         _: js.ExceptionRef,
     ) js.JSValueRef {
         return js.JSValueMakeUndefined(ctx);
+    }
+};
+
+pub const FormData = struct {
+    url: []const u8 = "",
+    pub usingnamespace JSC.Codegen.JSFormData;
+    // pub const FormValue = union(enum) {
+    //     string: ZigString,
+    //     blob: Blob,
+    // };
+    // // const HashMap = std.HashMap(u64, FormValue, IdentityContext, 80);
+    // pub const FormItem = struct { name: ZigString, value: FormValue };
+    // const LinkedList = std.SinglyLinkedList(FormItem);
+
+    pub fn constructor(
+        globalThis: *JSC.JSGlobalObject,
+        _: *JSC.CallFrame,
+    ) callconv(.C) ?*FormData {
+        var formData = FormData{};
+        var formData_ = getAllocator(globalThis).create(FormData) catch return null;
+        formData_.* = formData;
+        return formData_;
+    }
+
+    pub fn getUrl(
+        _: *FormData,
+        _: *JSC.JSGlobalObject,
+    ) callconv(.C) JSC.JSValue {
+        return .zero;
+        // return ZigString.init(this.url).withEncoding().toValueGC(globalThis);
+    }
+
+    pub fn finalize(this: *FormData) callconv(.C) void {
+        bun.default_allocator.free(bun.constStrToU8(this.url));
+        bun.default_allocator.destroy(this);
     }
 };

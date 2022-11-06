@@ -138,4 +138,14 @@ export default [
       },
     },
   }),
+  define({
+    name: "FormData",
+    construct: true,
+    finalize: true,
+    klass: {},
+    JSType: "0b11101110",
+    proto: {
+      url: { getter: "getUrl" },
+    },
+  }),
 ];
