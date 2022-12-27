@@ -126,6 +126,40 @@ pub const ReadableStream = struct {
         ReadableStream__detach(this.value, globalThis);
     }
 
+    pub fn tee(this: *const ReadableStream, globalThis: *JSGlobalObject) [2]ReadableStream {
+        Output.prettyErrorln("tee ing...", .{});
+        Output.flush();
+        JSC.markBinding(@src());
+        this.value.unprotect();
+        var branches = ReadableStream__tee(this.value, globalThis);
+        Output.prettyErrorln("after tee cpp part", .{});
+        Output.flush();
+        var array = branches.arrayIterator(globalThis);
+        Output.prettyErrorln("using cpp result", .{});
+        Output.flush();
+        var i: usize = 0;
+        var branch1 = JSC.WebCore.ReadableStream.fromJS(
+                            JSC.WebCore.ReadableStream.empty(globalThis),
+                            globalThis,
+                        ).?;
+        var branch2 = JSC.WebCore.ReadableStream.fromJS(
+                            JSC.WebCore.ReadableStream.empty(globalThis),
+                            globalThis,
+                        ).?;
+        while (array.next()) |val| {
+            Output.prettyErrorln("while loop", .{});
+            Output.flush();
+            if (i == 0) {
+                branch1 = ReadableStream.fromJS(val, globalThis).?;
+            } else {
+                branch2 = ReadableStream.fromJS(val, globalThis).?;
+            }
+            i += 1;
+        }
+
+        return .{ branch1, branch2 };
+    }
+
     pub const Tag = enum(i32) {
         Invalid = -1,
 
@@ -176,6 +210,7 @@ pub const ReadableStream = struct {
     extern fn ReadableStream__cancel(stream: JSValue, *JSGlobalObject) void;
     extern fn ReadableStream__abort(stream: JSValue, *JSGlobalObject) void;
     extern fn ReadableStream__detach(stream: JSValue, *JSGlobalObject) void;
+    extern fn ReadableStream__tee(possibleReadableStream: JSValue, globalObject: *JSGlobalObject) JSValue;
     extern fn ReadableStream__fromBlob(
         *JSGlobalObject,
         store: *anyopaque,

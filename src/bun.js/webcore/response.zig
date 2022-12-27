@@ -4451,6 +4451,35 @@ pub const Body = struct {
         deinit: bool = false,
         action: Action = Action.none,
 
+        pub fn clone(this: *PendingValue, globalThis: *JSC.JSGlobalObject) PendingValue {
+            if (this.readable) |readable| {
+                
+                Output.prettyErrorln("cloning pending value", .{});
+                Output.flush();
+                var branches = readable.tee(globalThis);
+                Output.prettyErrorln("after tee", .{});
+                Output.flush();
+                this.readable = branches[0];
+
+                return PendingValue{
+                    .readable = branches[1],
+                    .global = globalThis,
+                };
+            }
+            if (this.promise) |_| {
+                Output.prettyErrorln("has promise", .{});
+                Output.flush();
+            }
+            Output.prettyErrorln("pending value empty", .{});
+            Output.flush();
+            return PendingValue{
+                .global = this.global,
+                .task = this.task,
+                .onStartBuffering = this.onStartBuffering,
+                .onStartStreaming = this.onStartStreaming,
+            };
+        }
+
         pub fn toAnyBlob(this: *PendingValue) ?AnyBlob {
             if (this.promise != null)
                 return null;
@@ -5087,7 +5116,29 @@ pub const Body = struct {
             // }
 
             if (this.* == .Blob) {
+                Output.prettyErrorln("Blob", .{});
+                Output.flush();
                 return Value{ .Blob = this.Blob.dupe() };
+            } else if (this.* == .Locked) {
+                Output.prettyErrorln("Locked", .{});
+                Output.flush();
+                if (this.Locked.readable == null) {
+                    Output.prettyErrorln("clone Locked", .{});
+                    Output.flush();
+                    return Value{ .Locked = .{
+                        .global = this.Locked.global,
+                        .task = this.Locked.task,
+                        .onStartBuffering = this.Locked.onStartBuffering,
+                        .onStartStreaming = this.Locked.onStartStreaming,
+                    }};
+                }
+                return Value{ .Locked = this.Locked.clone(globalThis) };
+            } else if (this.* == .Used) {
+                Output.prettyErrorln("Used", .{});
+                Output.flush();
+            } else if (this.* == .Empty) {
+                Output.prettyErrorln("Empty", .{});
+                Output.flush();
             }
 
             return Value{ .Empty = .{} };
