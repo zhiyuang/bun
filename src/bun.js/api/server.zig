@@ -658,6 +658,7 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
         request_body_content_len: usize = 0,
         sink: ?*ResponseStream.JSSink = null,
         byte_stream: ?*JSC.WebCore.ByteStream = null,
+        request_pending: ?JSC.WebCore.Body.Value = null,
 
         /// Used in errors
         pathname: []const u8 = "",
@@ -1035,16 +1036,16 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
                 var request_js = this.request_js_object.?.value();
                 request_js.ensureStillAlive();
 
-                this.request_js_object = null;
+                // this.request_js_object = null;
                 defer request_js.ensureStillAlive();
                 defer JSC.C.JSValueUnprotect(this.server.globalThis, request_js.asObjectRef());
                 // User called .blob(), .json(), text(), or .arrayBuffer() on the Request object
                 // but we received nothing or the connection was aborted
                 if (request_js.as(Request)) |req| {
                     // the promise is pending
-                    if (req.body == .Locked and req.body.Locked.action != .none and req.body.Locked.promise != null) {
-                        req.body.toErrorInstance(JSC.toTypeError(.ABORT_ERR, "Request aborted", .{}, this.server.globalThis), this.server.globalThis);
-                    }
+                    // if (req.body == .Locked and req.body.Locked.action != .none and req.body.Locked.promise != null) {
+                    //     req.body.toErrorInstance(JSC.toTypeError(.ABORT_ERR, "Request aborted", .{}, this.server.globalThis), this.server.globalThis);
+                    // }
                     req.uws_request = null;
                 }
             }
@@ -2313,7 +2314,6 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
                 request.ensureStillAlive();
                 var bytes = this.request_body_buf;
                 defer this.request_body_buf = .{};
-                var old = req.body;
 
                 const total = bytes.items.len + chunk.len;
                 getter: {
@@ -2344,8 +2344,10 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
                     // }
                 }
 
-                if (old == .Locked)
-                    old.resolve(&req.body, this.server.globalThis);
+                if (this.request_pending) |*pending| {
+                    pending.resolveTest(&req.body, this.server.globalThis);
+                }
+
                 request.unprotect();
                 return;
             }
@@ -2386,9 +2388,11 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
             };
         }
         const max_request_body_preallocate_length = 1024 * 256;
-        pub fn onStartBuffering(this: *RequestContext) void {
+        pub fn onStartBuffering(this: *RequestContext, value: JSC.WebCore.Body.Value) void {
             const request = JSC.JSValue.c(this.request_js_object);
             request.ensureStillAlive();
+
+            this.request_pending = value;
 
             if (this.req.header("content-length")) |content_length| {
                 const len = std.fmt.parseInt(usize, content_length, 10) catch 0;
@@ -2436,8 +2440,8 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
             this.resp.onData(*RequestContext, onBufferedBodyChunk, this);
         }
 
-        pub fn onStartBufferingCallback(this: *anyopaque) void {
-            onStartBuffering(bun.cast(*RequestContext, this));
+        pub fn onStartBufferingCallback(this: *anyopaque, value: JSC.WebCore.Body.Value) void {
+            onStartBuffering(bun.cast(*RequestContext, this), value);
         }
 
         pub fn onStartStreamingRequestBodyCallback(this: *anyopaque) JSC.WebCore.DrainResult {
