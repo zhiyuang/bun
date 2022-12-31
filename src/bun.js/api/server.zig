@@ -658,7 +658,8 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
         request_body_content_len: usize = 0,
         sink: ?*ResponseStream.JSSink = null,
         byte_stream: ?*JSC.WebCore.ByteStream = null,
-        request_pending: ?JSC.WebCore.Body.Value = null,
+        request_pending: ?*JSC.WebCore.Body.Value = null,
+        request_body_content: ?JSC.WebCore.Body.Value = null,
 
         /// Used in errors
         pathname: []const u8 = "",
@@ -2336,16 +2337,24 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
                     bytes.items.len = total;
                     var slice = bytes.items[prev_len..];
                     @memcpy(slice.ptr, chunk.ptr, chunk.len);
-                    req.body = .{
+                    var body: JSC.WebCore.Body.Value = .{
                         .InternalBlob = .{
                             .bytes = bytes.toManaged(this.allocator),
                         },
                     };
-                    // }
-                }
 
-                if (this.request_pending) |*pending| {
-                    pending.resolveTest(&req.body, this.server.globalThis);
+                    if (this.request_pending) |pending| {
+                        Output.prettyErrorln("try to resolve", .{});
+                        Output.flush();
+                        pending.resolve(&body, this.server.globalThis);
+                        pending.* = body;
+                    }
+
+                    this.request_body_content = .{
+                        .InternalBlob = .{
+                            .bytes = bytes.toManaged(this.allocator),
+                        },
+                    };
                 }
 
                 request.unprotect();
@@ -2388,11 +2397,19 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
             };
         }
         const max_request_body_preallocate_length = 1024 * 256;
-        pub fn onStartBuffering(this: *RequestContext, value: JSC.WebCore.Body.Value) void {
+        pub fn onStartBuffering(this: *RequestContext, value: *JSC.WebCore.Body.Value) void {
             const request = JSC.JSValue.c(this.request_js_object);
             request.ensureStillAlive();
 
             this.request_pending = value;
+
+            if (this.request_body_content) |*body| {
+                var old = body.*;
+                value.resolve(body, this.server.globalThis);
+                value.* = body.*;
+                this.request_body_content = old;
+                return;
+            }
 
             if (this.req.header("content-length")) |content_length| {
                 const len = std.fmt.parseInt(usize, content_length, 10) catch 0;
@@ -2440,7 +2457,7 @@ fn NewRequestContext(comptime ssl_enabled: bool, comptime debug_mode: bool, comp
             this.resp.onData(*RequestContext, onBufferedBodyChunk, this);
         }
 
-        pub fn onStartBufferingCallback(this: *anyopaque, value: JSC.WebCore.Body.Value) void {
+        pub fn onStartBufferingCallback(this: *anyopaque, value: *JSC.WebCore.Body.Value) void {
             onStartBuffering(bun.cast(*RequestContext, this), value);
         }
 

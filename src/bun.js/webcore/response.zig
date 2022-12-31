@@ -4484,33 +4484,27 @@ pub const Body = struct {
 
         /// conditionally runs when requesting data
         /// used in HTTP server to ignore request bodies unless asked for it
-        onStartBuffering: ?*const fn (ctx: *anyopaque, value: Value) void = null,
+        onStartBuffering: ?*const fn (ctx: *anyopaque, value: *Value) void = null,
 
         onStartStreaming: ?*const fn (ctx: *anyopaque) JSC.WebCore.DrainResult = null,
 
         deinit: bool = false,
         action: Action = Action.none,
 
-                pub fn clone(this: *PendingValue, globalThis: *JSC.JSGlobalObject) PendingValue {
+        pub fn clone(this: *PendingValue, globalThis: *JSC.JSGlobalObject) PendingValue {
             if (this.readable) |readable| {
-                Output.prettyErrorln("cloning pending value", .{});
-                Output.flush();
                 var branches = readable.tee(globalThis);
-                Output.prettyErrorln("after tee", .{});
-                Output.flush();
                 this.readable = branches[0];
 
                 return PendingValue{
+                    .task = this.task,
                     .readable = branches[1],
                     .global = globalThis,
+                    .onStartBuffering = this.onStartBuffering,
+                    .onStartStreaming = this.onStartStreaming,
                 };
             }
-            if (this.promise) |_| {
-                Output.prettyErrorln("has promise", .{});
-                Output.flush();
-            }
-            Output.prettyErrorln("pending value empty", .{});
-            Output.flush();
+
             return PendingValue{
                 .global = this.global,
                 .task = this.task,
@@ -4536,51 +4530,6 @@ pub const Body = struct {
 
             return null;
         }
-
-        pub fn setPromise(value: *PendingValue, globalThis: *JSC.JSGlobalObject, action: Action) JSValue {
-            value.action = action;
-
-            if (value.readable) |readable| {
-                // switch (readable.ptr) {
-                //     .JavaScript
-                // }
-                switch (action) {
-                    .getText, .getJSON, .getBlob, .getArrayBuffer => {
-                        switch (readable.ptr) {
-                            .Blob => unreachable,
-                            else => {},
-                        }
-                        value.promise = switch (action) {
-                            .getJSON => globalThis.readableStreamToJSON(readable.value),
-                            .getArrayBuffer => globalThis.readableStreamToArrayBuffer(readable.value),
-                            .getText => globalThis.readableStreamToText(readable.value),
-                            .getBlob => globalThis.readableStreamToBlob(readable.value),
-                            else => unreachable,
-                        };
-                        value.promise.?.ensureStillAlive();
-                        readable.value.unprotect();
-
-                        // js now owns the memory
-                        value.readable = null;
-
-                        return value.promise.?;
-                    },
-                    .none => {},
-                }
-            }
-
-            {
-                var promise = JSC.JSPromise.create(globalThis);
-                const promise_value = promise.asValue(globalThis);
-                value.promise = promise_value;
-
-                // if (value.onStartBuffering) |onStartBuffering| {
-                //     value.onStartBuffering = null;
-                //     onStartBuffering(value.task.?);
-                // }
-                return promise_value;
-            }
-        }
     };
 
     /// This is a duplex stream!
@@ -4601,8 +4550,6 @@ pub const Body = struct {
                 this.Locked.action = action;
 
                 if (this.Locked.readable) |readable| {
-                    Output.prettyErrorln("set promise has readable", .{});
-                    Output.flush();
                     // switch (readable.ptr) {
                     //     .JavaScript
                     // }
@@ -4625,6 +4572,11 @@ pub const Body = struct {
                             // js now owns the memory
                             this.Locked.readable = null;
 
+                            if (this.Locked.onStartBuffering) |onStartBuffering| {
+                                this.Locked.onStartBuffering = null;
+                                onStartBuffering(this.Locked.task.?, this);
+                            }
+
                             return this.Locked.promise.?;
                         },
                         .none => {},
@@ -4632,15 +4584,13 @@ pub const Body = struct {
                 }
 
                 {
-                    Output.prettyErrorln("set promise for Value", .{});
-                    Output.flush();
                     var promise = JSC.JSPromise.create(globalThis);
                     const promise_value = promise.asValue(globalThis);
                     this.Locked.promise = promise_value;
 
                     if (this.Locked.onStartBuffering) |onStartBuffering| {
                         this.Locked.onStartBuffering = null;
-                        onStartBuffering(this.Locked.task.?, this.*);
+                        onStartBuffering(this.Locked.task.?, this);
                     }
                     return promise_value;
                 }
@@ -5031,93 +4981,6 @@ pub const Body = struct {
             }
         }
 
-        pub fn resolveTest(to_resolve: *Value, new: *Value, global: *JSGlobalObject) void {
-            Output.prettyErrorln("resolveTest", .{});
-            if (to_resolve.* == .InternalBlob) {
-                Output.prettyErrorln("resolveTest internalblob", .{});
-            }
-            if (to_resolve.* == .Blob) {
-                Output.prettyErrorln("resolveTest blob", .{});
-            }
-            Output.flush();
-            if (to_resolve.* == .Locked) {
-                Output.prettyErrorln("resolveTest Locked", .{});
-                Output.flush();
-                var locked = &to_resolve.Locked;
-                if (locked.readable) |readable| {
-                    readable.done();
-                    locked.readable = null;
-                }
-
-                if (locked.onReceiveValue) |callback| {
-                    locked.onReceiveValue = null;
-                    callback(locked.task.?, new);
-                    return;
-                }
-
-                if (locked.promise) |promise_| {
-                    Output.prettyErrorln("resolving Value promise", .{});
-                    Output.flush();
-                    var promise = promise_.asPromise().?;
-                    locked.promise = null;
-
-                    switch (locked.action) {
-                        .getText => {
-                            switch (new.*) {
-                                .InternalBlob,
-                                // .InlineBlob,
-                                => {
-                                    Output.prettyErrorln("promise resolve text test", .{});
-                                    Output.flush();
-                                    var blob = new.useAsAnyBlobTest();
-                                    promise.resolve(global, blob.toString(global, .transfer));
-                                },
-                                else => {
-                                    var blob = new.useTest();
-                                    promise.resolve(global, blob.toString(global, .transfer));
-                                },
-                            }
-                        },
-                        .getJSON => {
-                            Output.prettyErrorln("promise resolve json object test", .{});
-                            Output.flush();
-                            var blob = new.useAsAnyBlobTest();
-                            to_resolve.* = .{ .Used = .{} };
-                            const json_value = blob.toJSON(global, .share);
-                            blob.detach();
-
-                            if (json_value.isAnyError(global)) {
-                                promise.reject(global, json_value);
-                            } else {
-                                promise.resolve(global, json_value);
-                            }
-                        },
-                        .getArrayBuffer => {
-                            var blob = new.useAsAnyBlobTest();
-                            to_resolve.* = .{ .Used = .{} };
-                            promise.resolve(global, blob.toArrayBuffer(global, .transfer));
-                        },
-                        .getBlob => {
-                            Output.prettyErrorln("promise resolve blob object", .{});
-                            Output.flush();
-                            var ptr = bun.default_allocator.create(Blob) catch unreachable;
-                            ptr.* = new.use();
-
-                            ptr.allocator = bun.default_allocator;
-                            promise.resolve(global, ptr.toJS(global));
-                        },
-                        else => {
-                            var ptr = bun.default_allocator.create(Blob) catch unreachable;
-                            ptr.* = new.use();
-                            ptr.allocator = bun.default_allocator;
-                            promise_.asInternalPromise().?.resolve(global, ptr.toJS(global));
-                        },
-                    }
-                    JSC.C.JSValueUnprotect(global, promise_.asObjectRef());
-                }
-            }
-        }
-
         pub fn slice(this: *const Value) []const u8 {
             return switch (this.*) {
                 .Blob => this.Blob.sharedView(),
@@ -5171,48 +5034,6 @@ pub const Body = struct {
             }
         }
 
-        pub fn useTest(this: *Value) Blob {
-            this.toBlobIfPossible();
-
-            switch (this.*) {
-                .Blob => {
-                    var new_blob = this.Blob;
-                    std.debug.assert(new_blob.allocator == null); // owned by Body
-                    return new_blob;
-                },
-                .InternalBlob => {
-                    var new_blob = Blob.init(
-                        this.InternalBlob.toOwnedSlice(),
-                        // we will never resize it from here
-                        // we have to use the default allocator
-                        // even if it was actually allocated on a different thread
-                        bun.default_allocator,
-                        JSC.VirtualMachine.vm.global,
-                    );
-                    if (this.InternalBlob.was_string) {
-                        new_blob.content_type = MimeType.text.value;
-                    }
-
-                    return new_blob;
-                },
-                // .InlineBlob => {
-                //     const cloned = this.InlineBlob.bytes;
-                //     const new_blob = Blob.create(
-                //         cloned[0..this.InlineBlob.len],
-                //         bun.default_allocator,
-                //         JSC.VirtualMachine.vm.global,
-                //         this.InlineBlob.was_string,
-                //     );
-
-                //     this.* = .{ .Used = .{} };
-                //     return new_blob;
-                // },
-                else => {
-                    return Blob.initEmpty(undefined);
-                },
-            }
-        }
-
         pub fn tryUseAsAnyBlob(this: *Value) ?AnyBlob {
             const any_blob: AnyBlob = switch (this.*) {
                 .Blob => AnyBlob{ .Blob = this.Blob },
@@ -5226,17 +5047,6 @@ pub const Body = struct {
             return any_blob;
         }
 
-        pub fn tryUseAsAnyBlobTest(this: *Value) ?AnyBlob {
-            const any_blob: AnyBlob = switch (this.*) {
-                .Blob => AnyBlob{ .Blob = this.Blob },
-                .InternalBlob => AnyBlob{ .InternalBlob = this.InternalBlob },
-                // .InlineBlob => AnyBlob{ .InlineBlob = this.InlineBlob },
-                .Locked => this.Locked.toAnyBlobAllowPromise() orelse return null,
-                else => return null,
-            };
-
-            return any_blob;
-        }
 
         pub fn useAsAnyBlob(this: *Value) AnyBlob {
             const any_blob: AnyBlob = switch (this.*) {
@@ -5248,18 +5058,6 @@ pub const Body = struct {
             };
 
             this.* = .{ .Used = {} };
-            return any_blob;
-        }
-
-        pub fn useAsAnyBlobTest(this: *Value) AnyBlob {
-            const any_blob: AnyBlob = switch (this.*) {
-                .Blob => .{ .Blob = this.Blob },
-                .InternalBlob => .{ .InternalBlob = this.InternalBlob },
-                // .InlineBlob => .{ .InlineBlob = this.InlineBlob },
-                .Locked => this.Locked.toAnyBlobAllowPromise() orelse AnyBlob{ .Blob = .{} },
-                else => .{ .Blob = Blob.initEmpty(undefined) },
-            };
-
             return any_blob;
         }
 
@@ -5957,7 +5755,7 @@ fn BodyMixin(comptime Type: type) type {
             }
 
             if (value.* == .Locked) {
-                return value.Locked.setPromise(globalObject, .getArrayBuffer);
+                return value.setPromise(globalObject, .getArrayBuffer);
             }
 
             var blob: AnyBlob = value.useAsAnyBlob();
@@ -5976,7 +5774,7 @@ fn BodyMixin(comptime Type: type) type {
             }
 
             if (value.* == .Locked) {
-                return value.Locked.setPromise(globalObject, .getBlob);
+                return value.setPromise(globalObject, .getBlob);
             }
 
             var blob = value.use();
