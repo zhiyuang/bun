@@ -70,10 +70,12 @@ function initializeReadableStream(underlyingSource, strategy)
         return this;
     }
     if (isDirect) {
+        @throwTypeError("is Direct");
         @putByIdDirectPrivate(this, "underlyingSource", underlyingSource);
         @putByIdDirectPrivate(this, "highWaterMark", @getByIdDirectPrivate(strategy, "highWaterMark"));
         @putByIdDirectPrivate(this, "start", () => @createReadableStreamController(this, underlyingSource, strategy));
     } else if (isLazy) {
+        @throwTypeError("is Lazy");
         const autoAllocateChunkSize = underlyingSource.autoAllocateChunkSize;
         @putByIdDirectPrivate(this, "highWaterMark", @undefined);
         @putByIdDirectPrivate(this, "underlyingSource", @undefined);
@@ -87,6 +89,7 @@ function initializeReadableStream(underlyingSource, strategy)
             }
         });
     } else {
+        @throwTypeError("is Else");
         @putByIdDirectPrivate(this, "underlyingSource", @undefined);
         @putByIdDirectPrivate(this, "highWaterMark", @getByIdDirectPrivate(strategy, "highWaterMark"));
         @putByIdDirectPrivate(this, "start", @undefined);

@@ -51,7 +51,7 @@ namespace WebCore {
 const JSC::ConstructAbility s_readableStreamInitializeReadableStreamCodeConstructAbility = JSC::ConstructAbility::CannotConstruct;
 const JSC::ConstructorKind s_readableStreamInitializeReadableStreamCodeConstructorKind = JSC::ConstructorKind::None;
 const JSC::ImplementationVisibility s_readableStreamInitializeReadableStreamCodeImplementationVisibility = JSC::ImplementationVisibility::Public;
-const int s_readableStreamInitializeReadableStreamCodeLength = 3256;
+const int s_readableStreamInitializeReadableStreamCodeLength = 3366;
 static const JSC::Intrinsic s_readableStreamInitializeReadableStreamCodeIntrinsic = JSC::NoIntrinsic;
 const char* const s_readableStreamInitializeReadableStreamCode =
     "(function (underlyingSource, strategy)\n" \
@@ -100,10 +100,12 @@ const char* const s_readableStreamInitializeReadableStreamCode =
     "        return this;\n" \
     "    }\n" \
     "    if (isDirect) {\n" \
+    "        @throwTypeError(\"is Direct\");\n" \
     "        @putByIdDirectPrivate(this, \"underlyingSource\", underlyingSource);\n" \
     "        @putByIdDirectPrivate(this, \"highWaterMark\", @getByIdDirectPrivate(strategy, \"highWaterMark\"));\n" \
     "        @putByIdDirectPrivate(this, \"start\", () => @createReadableStreamController(this, underlyingSource, strategy));\n" \
     "    } else if (isLazy) {\n" \
+    "        @throwTypeError(\"is Lazy\");\n" \
     "        const autoAllocateChunkSize = underlyingSource.autoAllocateChunkSize;\n" \
     "        @putByIdDirectPrivate(this, \"highWaterMark\", @undefined);\n" \
     "        @putByIdDirectPrivate(this, \"underlyingSource\", @undefined);\n" \
@@ -117,6 +119,7 @@ const char* const s_readableStreamInitializeReadableStreamCode =
     "            }\n" \
     "        });\n" \
     "    } else {\n" \
+    "        @throwTypeError(\"is Else\");\n" \
     "        @putByIdDirectPrivate(this, \"underlyingSource\", @undefined);\n" \
     "        @putByIdDirectPrivate(this, \"highWaterMark\", @getByIdDirectPrivate(strategy, \"highWaterMark\"));\n" \
     "        @putByIdDirectPrivate(this, \"start\", @undefined);\n" \

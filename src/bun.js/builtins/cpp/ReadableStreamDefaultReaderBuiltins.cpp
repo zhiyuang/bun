@@ -93,7 +93,7 @@ const char* const s_readableStreamDefaultReaderCancelCode =
 const JSC::ConstructAbility s_readableStreamDefaultReaderReadManyCodeConstructAbility = JSC::ConstructAbility::CannotConstruct;
 const JSC::ConstructorKind s_readableStreamDefaultReaderReadManyCodeConstructorKind = JSC::ConstructorKind::None;
 const JSC::ImplementationVisibility s_readableStreamDefaultReaderReadManyCodeImplementationVisibility = JSC::ImplementationVisibility::Public;
-const int s_readableStreamDefaultReaderReadManyCodeLength = 4743;
+const int s_readableStreamDefaultReaderReadManyCodeLength = 4948;
 static const JSC::Intrinsic s_readableStreamDefaultReaderReadManyCodeIntrinsic = JSC::NoIntrinsic;
 const char* const s_readableStreamDefaultReaderReadManyCode =
     "(function ()\n" \
@@ -118,8 +118,9 @@ const char* const s_readableStreamDefaultReaderReadManyCode =
     "    \n" \
     "    var controller = @getByIdDirectPrivate(stream, \"readableStreamController\");\n" \
     "    var queue  = @getByIdDirectPrivate(controller, \"queue\");\n" \
-    "    \n" \
+    "    console.log(\"queue\", queue);\n" \
     "    if (!queue) {\n" \
+    "        console.log(\"no queue\");\n" \
     "        //\n" \
     "        //\n" \
     "        return controller.@pull(\n" \
@@ -183,6 +184,7 @@ const char* const s_readableStreamDefaultReaderReadManyCode =
     "    }\n" \
     "\n" \
     "    var onPullMany = (result) => {\n" \
+    "        console.log(\"on pull many\");\n" \
     "        if (result.done) {\n" \
     "            return {value: [], size: 0, done: true};\n" \
     "        }\n" \
@@ -220,9 +222,11 @@ const char* const s_readableStreamDefaultReaderReadManyCode =
     "        \n" \
     "        return {value: value, size: size, done: false};\n" \
     "    };\n" \
-    "    \n" \
+    "    console.log(\"begin pulling\");\n" \
     "    var pullResult = controller.@pull(controller);\n" \
+    "    console.log(\"after pulling\")\n" \
     "    if (pullResult && @isPromise(pullResult)) {\n" \
+    "        console.log(\"pulling is a promise\");\n" \
     "        return pullResult.@then(onPullMany);\n" \
     "    }\n" \
     "\n" \

@@ -88,7 +88,7 @@ function readableStreamDefaultControllerError(controller, error) {
   const stream = @getByIdDirectPrivate(controller, "controlledReadableStream");
   if (@getByIdDirectPrivate(stream, "state") !== @streamReadable) return;
   @putByIdDirectPrivate(controller, "queue", @newQueue());
-
+  console.log("readable stream error");
   @readableStreamError(stream, error);
 }
 
@@ -183,11 +183,12 @@ function setupReadableStreamDefaultController(
 
 function createReadableStreamController(stream, underlyingSource, strategy) {
   "use strict";
-
+  console.log("create controller");
   const type = underlyingSource.type;
   const typeString = @toString(type);
 
   if (typeString === "bytes") {
+    console.log("bytes controller");
     // if (!@readableByteStreamAPIEnabled())
     //     @throwTypeError("ReadableByteStreamController is not implemented");
 
@@ -208,6 +209,7 @@ function createReadableStreamController(stream, underlyingSource, strategy) {
       )
     );
   } else if (typeString === "direct") {
+    console.log("create direct controller");
     var highWaterMark = strategy?.highWaterMark;
     @initializeArrayBufferStream.@call(
       stream,
@@ -215,6 +217,7 @@ function createReadableStreamController(stream, underlyingSource, strategy) {
       highWaterMark
     );
   } else if (type === @undefined) {
+    console.log("create undefined controller");
     if (strategy.highWaterMark === @undefined) strategy.highWaterMark = 1;
 
     @setupReadableStreamDefaultController(
@@ -881,9 +884,11 @@ async function readStreamIntoSink(stream, sink, isNative) {
   try {
     var reader = stream.getReader();
     var many = reader.readMany();
+    console.log("after reading many")
     if (many && @isPromise(many)) {
       many = await many;
     }
+    console.log("after await reading many")
     if (many.done) {
       didClose = true;
       return sink.end();
@@ -920,7 +925,7 @@ async function readStreamIntoSink(stream, sink, isNative) {
     }
   } catch (e) {
     didThrow = true;
-
+    console.log("catching exception", e)
 
     try {
         reader = @undefined;
@@ -1476,7 +1481,7 @@ function readableStreamError(stream, error) {
   @putByIdDirectPrivate(stream, "storedError", error);
 
   const reader = @getByIdDirectPrivate(stream, "reader");
-
+  console.log("reader", reader);
   if (!reader) return;
 
   if (@isReadableStreamDefaultReader(reader)) {
@@ -1556,6 +1561,7 @@ function readableStreamDefaultControllerCallPullIfNeeded(controller) {
     .@call(@undefined)
     .@then(
       function () {
+        console.log("controller pulling");
         @putByIdDirectPrivate(controller, "pulling", false);
         if (@getByIdDirectPrivate(controller, "pullAgain")) {
           @putByIdDirectPrivate(controller, "pullAgain", false);
@@ -1564,6 +1570,7 @@ function readableStreamDefaultControllerCallPullIfNeeded(controller) {
         }
       },
       function (error) {
+        console.log("controller pulling error", error);
         @readableStreamDefaultControllerError(controller, error);
       }
     );

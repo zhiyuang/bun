@@ -73,8 +73,9 @@ function readMany()
     
     var controller = @getByIdDirectPrivate(stream, "readableStreamController");
     var queue  = @getByIdDirectPrivate(controller, "queue");
-    
+    console.log("queue", queue);
     if (!queue) {
+        console.log("no queue");
         // This is a ReadableStream direct controller implemented in JS
         // It hasn't been started yet.
         return controller.@pull(
@@ -138,6 +139,7 @@ function readMany()
     }
 
     var onPullMany = (result) => {
+        console.log("on pull many");
         if (result.done) {
             return {value: [], size: 0, done: true};
         }
@@ -175,9 +177,11 @@ function readMany()
         
         return {value: value, size: size, done: false};
     };
-    
+    console.log("begin pulling");
     var pullResult = controller.@pull(controller);
+    console.log("after pulling")
     if (pullResult && @isPromise(pullResult)) {
+        console.log("pulling is a promise");
         return pullResult.@then(onPullMany);
     }
 

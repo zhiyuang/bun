@@ -121,7 +121,7 @@ const char* const s_readableStreamInternalsPrivateInitializeReadableStreamDefaul
 const JSC::ConstructAbility s_readableStreamInternalsReadableStreamDefaultControllerErrorCodeConstructAbility = JSC::ConstructAbility::CannotConstruct;
 const JSC::ConstructorKind s_readableStreamInternalsReadableStreamDefaultControllerErrorCodeConstructorKind = JSC::ConstructorKind::None;
 const JSC::ImplementationVisibility s_readableStreamInternalsReadableStreamDefaultControllerErrorCodeImplementationVisibility = JSC::ImplementationVisibility::Public;
-const int s_readableStreamInternalsReadableStreamDefaultControllerErrorCodeLength = 305;
+const int s_readableStreamInternalsReadableStreamDefaultControllerErrorCodeLength = 344;
 static const JSC::Intrinsic s_readableStreamInternalsReadableStreamDefaultControllerErrorCodeIntrinsic = JSC::NoIntrinsic;
 const char* const s_readableStreamInternalsReadableStreamDefaultControllerErrorCode =
     "(function (controller, error) {\n" \
@@ -130,7 +130,7 @@ const char* const s_readableStreamInternalsReadableStreamDefaultControllerErrorC
     "  const stream = @getByIdDirectPrivate(controller, \"controlledReadableStream\");\n" \
     "  if (@getByIdDirectPrivate(stream, \"state\") !== @streamReadable) return;\n" \
     "  @putByIdDirectPrivate(controller, \"queue\", @newQueue());\n" \
-    "\n" \
+    "  console.log(\"readable stream error\");\n" \
     "  @readableStreamError(stream, error);\n" \
     "})\n" \
 ;
@@ -246,16 +246,17 @@ const char* const s_readableStreamInternalsSetupReadableStreamDefaultControllerC
 const JSC::ConstructAbility s_readableStreamInternalsCreateReadableStreamControllerCodeConstructAbility = JSC::ConstructAbility::CannotConstruct;
 const JSC::ConstructorKind s_readableStreamInternalsCreateReadableStreamControllerCodeConstructorKind = JSC::ConstructorKind::None;
 const JSC::ImplementationVisibility s_readableStreamInternalsCreateReadableStreamControllerCodeImplementationVisibility = JSC::ImplementationVisibility::Public;
-const int s_readableStreamInternalsCreateReadableStreamControllerCodeLength = 1243;
+const int s_readableStreamInternalsCreateReadableStreamControllerCodeLength = 1408;
 static const JSC::Intrinsic s_readableStreamInternalsCreateReadableStreamControllerCodeIntrinsic = JSC::NoIntrinsic;
 const char* const s_readableStreamInternalsCreateReadableStreamControllerCode =
     "(function (stream, underlyingSource, strategy) {\n" \
     "  \"use strict\";\n" \
-    "\n" \
+    "  console.log(\"create controller\");\n" \
     "  const type = underlyingSource.type;\n" \
     "  const typeString = @toString(type);\n" \
     "\n" \
     "  if (typeString === \"bytes\") {\n" \
+    "    console.log(\"bytes controller\");\n" \
     "    //\n" \
     "    //\n" \
     "\n" \
@@ -276,6 +277,7 @@ const char* const s_readableStreamInternalsCreateReadableStreamControllerCode =
     "      )\n" \
     "    );\n" \
     "  } else if (typeString === \"direct\") {\n" \
+    "    console.log(\"create direct controller\");\n" \
     "    var highWaterMark = strategy?.highWaterMark;\n" \
     "    @initializeArrayBufferStream.@call(\n" \
     "      stream,\n" \
@@ -283,6 +285,7 @@ const char* const s_readableStreamInternalsCreateReadableStreamControllerCode =
     "      highWaterMark\n" \
     "    );\n" \
     "  } else if (type === @undefined) {\n" \
+    "    console.log(\"create undefined controller\");\n" \
     "    if (strategy.highWaterMark === @undefined) strategy.highWaterMark = 1;\n" \
     "\n" \
     "    @setupReadableStreamDefaultController(\n" \
@@ -1082,7 +1085,7 @@ const char* const s_readableStreamInternalsAssignToStreamCode =
 const JSC::ConstructAbility s_readableStreamInternalsReadStreamIntoSinkCodeConstructAbility = JSC::ConstructAbility::CannotConstruct;
 const JSC::ConstructorKind s_readableStreamInternalsReadStreamIntoSinkCodeConstructorKind = JSC::ConstructorKind::None;
 const JSC::ImplementationVisibility s_readableStreamInternalsReadStreamIntoSinkCodeImplementationVisibility = JSC::ImplementationVisibility::Public;
-const int s_readableStreamInternalsReadStreamIntoSinkCodeLength = 2869;
+const int s_readableStreamInternalsReadStreamIntoSinkCodeLength = 2991;
 static const JSC::Intrinsic s_readableStreamInternalsReadStreamIntoSinkCodeIntrinsic = JSC::NoIntrinsic;
 const char* const s_readableStreamInternalsReadStreamIntoSinkCode =
     "(async function (stream, sink, isNative) {\n" \
@@ -1093,9 +1096,11 @@ const char* const s_readableStreamInternalsReadStreamIntoSinkCode =
     "  try {\n" \
     "    var reader = stream.getReader();\n" \
     "    var many = reader.readMany();\n" \
+    "    console.log(\"after reading many\")\n" \
     "    if (many && @isPromise(many)) {\n" \
     "      many = await many;\n" \
     "    }\n" \
+    "    console.log(\"after await reading many\")\n" \
     "    if (many.done) {\n" \
     "      didClose = true;\n" \
     "      return sink.end();\n" \
@@ -1132,7 +1137,7 @@ const char* const s_readableStreamInternalsReadStreamIntoSinkCode =
     "    }\n" \
     "  } catch (e) {\n" \
     "    didThrow = true;\n" \
-    "\n" \
+    "    console.log(\"catching exception\", e)\n" \
     "\n" \
     "    try {\n" \
     "        reader = @undefined;\n" \
@@ -1760,7 +1765,7 @@ const char* const s_readableStreamInternalsInitializeArrayBufferStreamCode =
 const JSC::ConstructAbility s_readableStreamInternalsReadableStreamErrorCodeConstructAbility = JSC::ConstructAbility::CannotConstruct;
 const JSC::ConstructorKind s_readableStreamInternalsReadableStreamErrorCodeConstructorKind = JSC::ConstructorKind::None;
 const JSC::ImplementationVisibility s_readableStreamInternalsReadableStreamErrorCodeImplementationVisibility = JSC::ImplementationVisibility::Public;
-const int s_readableStreamInternalsReadableStreamErrorCodeLength = 1212;
+const int s_readableStreamInternalsReadableStreamErrorCodeLength = 1244;
 static const JSC::Intrinsic s_readableStreamInternalsReadableStreamErrorCodeIntrinsic = JSC::NoIntrinsic;
 const char* const s_readableStreamInternalsReadableStreamErrorCode =
     "(function (stream, error) {\n" \
@@ -1772,7 +1777,7 @@ const char* const s_readableStreamInternalsReadableStreamErrorCode =
     "  @putByIdDirectPrivate(stream, \"storedError\", error);\n" \
     "\n" \
     "  const reader = @getByIdDirectPrivate(stream, \"reader\");\n" \
-    "\n" \
+    "  console.log(\"reader\", reader);\n" \
     "  if (!reader) return;\n" \
     "\n" \
     "  if (@isReadableStreamDefaultReader(reader)) {\n" \
@@ -1833,7 +1838,7 @@ const char* const s_readableStreamInternalsReadableStreamDefaultControllerShould
 const JSC::ConstructAbility s_readableStreamInternalsReadableStreamDefaultControllerCallPullIfNeededCodeConstructAbility = JSC::ConstructAbility::CannotConstruct;
 const JSC::ConstructorKind s_readableStreamInternalsReadableStreamDefaultControllerCallPullIfNeededCodeConstructorKind = JSC::ConstructorKind::None;
 const JSC::ImplementationVisibility s_readableStreamInternalsReadableStreamDefaultControllerCallPullIfNeededCodeImplementationVisibility = JSC::ImplementationVisibility::Public;
-const int s_readableStreamInternalsReadableStreamDefaultControllerCallPullIfNeededCodeLength = 1277;
+const int s_readableStreamInternalsReadableStreamDefaultControllerCallPullIfNeededCodeLength = 1376;
 static const JSC::Intrinsic s_readableStreamInternalsReadableStreamDefaultControllerCallPullIfNeededCodeIntrinsic = JSC::NoIntrinsic;
 const char* const s_readableStreamInternalsReadableStreamDefaultControllerCallPullIfNeededCode =
     "(function (controller) {\n" \
@@ -1866,6 +1871,7 @@ const char* const s_readableStreamInternalsReadableStreamDefaultControllerCallPu
     "    .@call(@undefined)\n" \
     "    .@then(\n" \
     "      function () {\n" \
+    "        console.log(\"controller pulling\");\n" \
     "        @putByIdDirectPrivate(controller, \"pulling\", false);\n" \
     "        if (@getByIdDirectPrivate(controller, \"pullAgain\")) {\n" \
     "          @putByIdDirectPrivate(controller, \"pullAgain\", false);\n" \
@@ -1874,6 +1880,7 @@ const char* const s_readableStreamInternalsReadableStreamDefaultControllerCallPu
     "        }\n" \
     "      },\n" \
     "      function (error) {\n" \
+    "        console.log(\"controller pulling error\", error);\n" \
     "        @readableStreamDefaultControllerError(controller, error);\n" \
     "      }\n" \
     "    );\n" \
