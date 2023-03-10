@@ -2092,9 +2092,9 @@ pub const Expect = struct {
         }).init(globalObject, extended.asObjectRef());
         defer props_iter.deinit();
 
-        while (props_iter.next()) |prop| {
-            const v = extended.getIfPropertyExistsImpl(globalObject, prop.ptr, @intCast(u32, prop.len));
-            Output.prettyErrorln("value: {d}", .{@boolToInt(v.isNumber())});
+        while (props_iter.next()) |_| {
+            // const v = extended.getIfPropertyExistsImpl(globalObject, prop.ptr, @intCast(u32, prop.len));
+            Output.prettyErrorln("value: {d}", .{@boolToInt(props_iter.value.isNumber())});
         }
 
         // prototype.put(globalObject, ZigString.static("namespace"), JSValue.jsNumber(1));
