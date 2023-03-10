@@ -2045,7 +2045,34 @@ pub const Expect = struct {
     pub const getResolves = notImplementedJSCProp;
     pub const getRejects = notImplementedJSCProp;
 
-    pub const extend = notImplementedStaticFn;
+    pub fn extend(globalObject: *JSC.JSGlobalObject, callFrame: *JSC.CallFrame) callconv(.C) JSC.JSValue {
+        const thisValue = callFrame.this();
+        const arguments_ = callFrame.arguments(1);
+        const arguments = arguments_.ptr[0..arguments_.len];
+
+        if (arguments.len < 1) {
+            globalObject.throwInvalidArguments("extend() takes 1 argument", .{});
+            return .zero;
+        }
+
+        const extended = arguments[0];
+        if (!extended.isObject()) {
+            globalObject.throwInvalidArguments("extend() only accept object as argument", .{});
+            return .zero;
+        }
+        extended.ensureStillAlive();
+
+        // 遍历 object 的 key，插入到 prototype 中
+
+        var thisObject: *JSC.JSObject = thisValue.toObject(globalObject);
+        const prototype = thisObject.getDirect(globalObject, ZigString.static("prototype"));
+        Output.prettyErrorln("js type: {s}", .{@tagName(prototype.jsType())});
+        Output.prettyErrorln("properties: {s}", .{prototype.getName(globalObject)});
+        prototype.put(globalObject, ZigString.static("namespace"), JSValue.jsNumber(1));
+
+        return .zero;
+    }
+
     pub const anything = notImplementedStaticFn;
     pub const any = notImplementedStaticFn;
     pub const arrayContaining = notImplementedStaticFn;

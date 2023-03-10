@@ -2323,11 +2323,10 @@ double JSC__JSValue__asNumber(JSC__JSValue JSValue0)
     auto value = JSC::JSValue::decode(JSValue0);
     return value.asNumber();
 };
-bJSC__JSObject JSC__JSValue__asObject(JSC__JSValue JSValue0)
+JSC__JSObject* JSC__JSValue__asObject(JSC__JSValue JSValue0)
 {
     auto value = JSC::JSValue::decode(JSValue0);
-    auto obj = JSC::asObject(value);
-    return cast<bJSC__JSObject>(&obj);
+    return JSC::asObject(value);
 };
 JSC__JSString* JSC__JSValue__asString(JSC__JSValue JSValue0)
 {
@@ -2349,6 +2348,11 @@ JSC__JSValue JSC__JSValue__getPrototype(JSC__JSValue JSValue0, JSC__JSGlobalObje
 {
     auto value = JSC::JSValue::decode(JSValue0);
     return JSC::JSValue::encode(value.getPrototype(arg1));
+}
+bool JSC__JSValue__setPrototype(JSC__JSValue JSValue0, JSC__JSGlobalObject* arg1, JSC__JSValue JSValue2)
+{
+    JSC::JSObject* object = JSC::JSValue::decode(JSValue0).asCell()->getObject();
+    return object->setPrototype(arg1->vm(), arg1, JSC::JSValue::decode(JSValue2));
 }
 bool JSC__JSValue__isException(JSC__JSValue JSValue0, JSC__VM* arg1)
 {
