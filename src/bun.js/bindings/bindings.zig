@@ -63,6 +63,29 @@ pub const JSObject = extern struct {
         });
     }
 
+    pub fn getByIndex(this: *JSObject, globalThis: *JSGlobalObject, i: u32) JSValue {
+        return cppFn("getByIndex", .{
+            this,
+            globalThis,
+            i,
+        });
+    }
+
+    pub fn getByPropertyKey(this: *JSObject, globalThis: *JSGlobalObject, key: JSValue) JSValue {
+        return cppFn("getByPropertyKey", .{
+            this,
+            globalThis,
+            key,
+        });
+    }
+
+    pub fn getOwnPropertyKeys(this: JSValue, globalThis: *JSGlobalObject) *JSObject {
+        return cppFn("getOwnPropertyKeys", .{
+            this,
+            globalThis,
+        });
+    }
+
     pub fn putRecord(this: *JSObject, global: *JSGlobalObject, key: *ZigString, values: [*]ZigString, values_len: usize) void {
         return cppFn("putRecord", .{ this, global, key, values, values_len });
     }
@@ -80,8 +103,11 @@ pub const JSObject = extern struct {
         "create",
         "getArrayLength",
         "getIndex",
+        "getByIndex",
+        "getByPropertyKey",
         "putAtIndex",
         "getDirect",
+        "getOwnPropertyKeys",
     };
 };
 
@@ -3601,6 +3627,14 @@ pub const JSValue = enum(JSValueReprInt) {
         return cppFn("getIfPropertyExistsFromPath", .{ this, global, path });
     }
 
+    pub fn getByPropertyKey(this: JSValue, globalThis: *JSGlobalObject, key: JSValue) JSValue {
+        return cppFn("getByPropertyKey", .{
+            this,
+            globalThis,
+            key,
+        });
+    }
+
     pub fn getSymbolDescription(this: JSValue, global: *JSGlobalObject, str: *ZigString) void {
         cppFn("getSymbolDescription", .{ this, global, str });
     }
@@ -3908,6 +3942,7 @@ pub const JSValue = enum(JSValueReprInt) {
         "getIfExists",
         "getIfPropertyExistsFromPath",
         "getIfPropertyExistsImpl",
+        "getByPropertyKey",
         "getLengthOfArray",
         "getNameProperty",
         "getPropertyByPropertyName",

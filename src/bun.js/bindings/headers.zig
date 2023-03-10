@@ -82,8 +82,11 @@ pub const JSC__Exception = bJSC__Exception;
 pub const JSC__JSString = bJSC__JSString;
 pub extern fn JSC__JSObject__create(arg0: *bindings.JSGlobalObject, arg1: usize, arg2: ?*anyopaque, ArgFn3: ?*const fn (?*anyopaque, [*c]bindings.JSObject, *bindings.JSGlobalObject) callconv(.C) void) JSC__JSValue;
 pub extern fn JSC__JSObject__getArrayLength(arg0: [*c]bindings.JSObject) usize;
+pub extern fn JSC__JSObject__getByIndex(arg0: [*c]bindings.JSObject, arg1: *bindings.JSGlobalObject, arg2: u32) JSC__JSValue;
+pub extern fn JSC__JSObject__getByPropertyKey(arg0: [*c]bindings.JSObject, arg1: *bindings.JSGlobalObject, JSValue2: JSC__JSValue) JSC__JSValue;
 pub extern fn JSC__JSObject__getDirect(arg0: [*c]bindings.JSObject, arg1: *bindings.JSGlobalObject, arg2: [*c]const ZigString) JSC__JSValue;
 pub extern fn JSC__JSObject__getIndex(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, arg2: u32) JSC__JSValue;
+pub extern fn JSC__JSObject__getOwnPropertyKeys(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject) [*c]bindings.JSObject;
 pub extern fn JSC__JSObject__putRecord(arg0: [*c]bindings.JSObject, arg1: *bindings.JSGlobalObject, arg2: [*c]ZigString, arg3: [*c]ZigString, arg4: usize) void;
 pub extern fn ZigString__external(arg0: [*c]const ZigString, arg1: *bindings.JSGlobalObject, arg2: ?*anyopaque, ArgFn3: ?*const fn (?*anyopaque, ?*anyopaque, usize) callconv(.C) void) JSC__JSValue;
 pub extern fn ZigString__to16BitValue(arg0: [*c]const ZigString, arg1: *bindings.JSGlobalObject) JSC__JSValue;
@@ -216,6 +219,7 @@ pub extern fn JSC__JSValue__forEachPropertyOrdered(JSValue0: JSC__JSValue, arg1:
 pub extern fn JSC__JSValue__fromEntries(arg0: *bindings.JSGlobalObject, arg1: [*c]ZigString, arg2: [*c]ZigString, arg3: usize, arg4: bool) JSC__JSValue;
 pub extern fn JSC__JSValue__fromInt64NoTruncate(arg0: *bindings.JSGlobalObject, arg1: i64) JSC__JSValue;
 pub extern fn JSC__JSValue__fromUInt64NoTruncate(arg0: *bindings.JSGlobalObject, arg1: u64) JSC__JSValue;
+pub extern fn JSC__JSValue__getByPropertyKey(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, JSValue2: JSC__JSValue) JSC__JSValue;
 pub extern fn JSC__JSValue__getClassName(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, arg2: [*c]ZigString) void;
 pub extern fn JSC__JSValue__getErrorsProperty(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject) JSC__JSValue;
 pub extern fn JSC__JSValue__getIfPropertyExistsFromPath(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, JSValue2: JSC__JSValue) JSC__JSValue;
@@ -264,7 +268,6 @@ pub extern fn JSC__JSValue__parseJSON(JSValue0: JSC__JSValue, arg1: *bindings.JS
 pub extern fn JSC__JSValue__put(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, arg2: [*c]const ZigString, JSValue3: JSC__JSValue) void;
 pub extern fn JSC__JSValue__putIndex(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, arg2: u32, JSValue3: JSC__JSValue) void;
 pub extern fn JSC__JSValue__putRecord(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, arg2: [*c]ZigString, arg3: [*c]ZigString, arg4: usize) void;
-pub extern fn JSC__JSValue__setPrototype(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, JSValue2: JSC__JSValue) bool;
 pub extern fn JSC__JSValue__strictDeepEquals(JSValue0: JSC__JSValue, JSValue1: JSC__JSValue, arg2: *bindings.JSGlobalObject) bool;
 pub extern fn JSC__JSValue__symbolFor(arg0: *bindings.JSGlobalObject, arg1: [*c]ZigString) JSC__JSValue;
 pub extern fn JSC__JSValue__symbolKeyFor(JSValue0: JSC__JSValue, arg1: *bindings.JSGlobalObject, arg2: [*c]ZigString) bool;

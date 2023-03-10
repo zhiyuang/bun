@@ -1472,6 +1472,23 @@ JSC__JSValue JSC__JSObject__getIndex(JSC__JSValue jsValue, JSC__JSGlobalObject* 
 {
     return JSC::JSValue::encode(JSC::JSValue::decode(jsValue).toObject(arg1)->getIndex(arg1, arg3));
 }
+
+JSC__JSObject* JSC__JSObject__getOwnPropertyKeys(JSC__JSValue value, JSC__JSGlobalObject* globalObject) {
+    JSC::JSValue jsValue = JSC::JSValue::decode(value);
+    JSC::JSObject* object = jsValue.toObject(globalObject);
+    JSC::JSArray* keys = JSC::ownPropertyKeys(globalObject, object, PropertyNameMode::Strings, DontEnumPropertiesMode::Exclude, CachedPropertyNamesKind::Keys);
+    return keys;
+}
+
+JSC__JSValue JSC__JSObject__getByIndex(JSC__JSObject* object, JSC__JSGlobalObject* globalObject, uint32_t i) {
+    return JSC::JSValue::encode(object->getIndex(globalObject, i));
+}
+
+JSC__JSValue JSC__JSObject__getByPropertyKey(JSC__JSObject* object, JSC__JSGlobalObject* globalObject, JSC__JSValue key) {
+    auto propertyName = JSC::PropertyName(JSC::JSValue::decode(key).toPropertyKey(globalObject));
+    return JSC::JSValue::encode(object->getIfPropertyExists(globalObject, propertyName));
+}
+
 JSC__JSValue JSC__JSObject__getDirect(JSC__JSObject* arg0, JSC__JSGlobalObject* arg1,
     const ZigString* arg2)
 {
@@ -2323,10 +2340,11 @@ double JSC__JSValue__asNumber(JSC__JSValue JSValue0)
     auto value = JSC::JSValue::decode(JSValue0);
     return value.asNumber();
 };
-JSC__JSObject* JSC__JSValue__asObject(JSC__JSValue JSValue0)
+bJSC__JSObject JSC__JSValue__asObject(JSC__JSValue JSValue0)
 {
     auto value = JSC::JSValue::decode(JSValue0);
-    return JSC::asObject(value);
+    auto obj = JSC::asObject(value);
+    return cast<bJSC__JSObject>(&obj);
 };
 JSC__JSString* JSC__JSValue__asString(JSC__JSValue JSValue0)
 {
@@ -2640,6 +2658,14 @@ JSC__JSValue JSC__JSValue__createObject2(JSC__JSGlobalObject* globalObject, cons
         ->defineOwnProperty(object, globalObject, key1, descriptor1, true);
 
     return JSC::JSValue::encode(object);
+}
+
+JSC__JSValue JSC__JSValue__getByPropertyKey(JSC__JSValue value, JSC__JSGlobalObject* globalObject, JSC__JSValue key)
+{
+    JSC::VM& vm = globalObject->vm();
+    JSC::JSObject* object = JSC::JSValue::decode(value).asCell()->getObject();
+    auto propertyName = JSC::PropertyName(JSC::JSValue::decode(key).toPropertyKey(globalObject));
+    return JSC::JSValue::encode(object->getIfPropertyExists(globalObject, propertyName));
 }
 
 JSC__JSValue JSC__JSValue__getIfPropertyExistsImpl(JSC__JSValue JSValue0,
